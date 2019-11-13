@@ -8,16 +8,15 @@ import pygame as pg
 from pygame.locals import *
 
 from uagame import Window
-from Word import Word
+from word import Word
 from serialrecall import SerialRecall
-from PresentWords import PresentWords
+from presentwords import PresentWords
 from results import ResultsFile
 
 
+## INPUT PARAMETERS ##
 WORDS_FILENAME = 'words.txt'
-
 WINDOW_SIZE = (700, 500)
-
 DEFAULT_FONT_COLOR = "gray"
 DEFAULT_FONT_SIZE = 36
 DEFAULT_FONT_NAME = "Arial"

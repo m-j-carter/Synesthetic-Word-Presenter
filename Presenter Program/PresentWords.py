@@ -15,15 +15,13 @@ import time
 from results import ResultsFile
 
 
-WORDS_FILENAME = 'words.txt'
-
+## TEST PARAMETERS ##
+WORDS_FILENAME = 'testwords.txt'
 WINDOW_SIZE = (700, 500)
-
 DEFAULT_FONT_COLOR = "gray"
 DEFAULT_FONT_SIZE = 36
 DEFAULT_FONT_NAME = "Arial"
 BG_COLOR = "gray50"
-
 
 
 class PresentWords:
@@ -39,6 +37,7 @@ class PresentWords:
     @classmethod
     def set_results_file(cls, results_file):
         cls.results = results_file
+
 
     def __init__(self, num_words, present_time, delay_time, is_colored=False):
         self.__is_colored = is_colored
@@ -56,7 +55,8 @@ class PresentWords:
 
         self.generate_rand_word_list()
         self.__window = PresentWords.window
-            
+        
+        self.__write_to_results()            
         self.run()
 
     def run(self):
@@ -64,6 +64,9 @@ class PresentWords:
         self.__create_window()
         self.__display_instructions()     
         self.__display_countdown()
+        
+        self.__timer_bl.reset()
+        self.__timer_wd.reset()
         
         for word in self.__word_list:        
             next = False
@@ -86,6 +89,13 @@ class PresentWords:
         self.__window.clear()
         self.__window.update()
   
+    def __write_to_results(self):
+        # writes the info to the header of the results file
+        PresentWords.results.new_trial_header(self.__word_list, 
+                                              self.__present_time, 
+                                              self.__delay_time, 
+                                              self.__is_colored)
+  
     def __check_events(self): 
         # handle user inputs
         for event in pg.event.get():
@@ -105,8 +115,13 @@ class PresentWords:
        
     def generate_rand_word_list(self):
         # Generates the word_list by randomly picking num_words from word_lib.
-        for i in range(self.__num_words+1):
-            self.__word_list.append(random.choice(PresentWords.word_lib, replace=False)) 
+        try:
+            for i in range(self.__num_words+1):
+                r = random.randint(0, len(PresentWords.word_lib))
+                self.__word_list.append(PresentWords.word_lib.pop(r))
+                #self.__word_list.append(random.choice(PresentWords.word_lib, replace=False)) 
+        except ValueError:
+            print("Value Error: Insufficient words given") 
  
     def __display_next(self,word):
         # displays the next word for present_time, followed by a blank screen for delay_time 
@@ -125,7 +140,7 @@ class PresentWords:
 
     def __display_word(self,word):
         word.set_window(self.__window)
-        word.draw_word()
+        word.draw_word(self.__is_colored)
         
     def __display_instructions(self):
         # Draws each line of each page to the display. 
@@ -192,6 +207,7 @@ class DisplayTimer:
         self.__time_init = time.time()
 
     def been_longer_than(self, check_seconds):
+        # returns true if the timer has exceeded the check time.
         time_now = time.time()
         if self.__time_init < (time_now - check_seconds):
             return True
@@ -210,9 +226,8 @@ def main():
     PresentWords.set_word_lib(word_library) 
     PresentWords.set_window(window) 
     
-    #results_file = ResultsFile()    
-    #PresentWords.set_results_file(results_file)
-       
+    results_file = ResultsFile()    
+    PresentWords.set_results_file(results_file)
     
     # Present Words
     test_1 = PresentWords(4, 5, 2, False)      # (num_words, present_time, delay_time, is_colored (bool))

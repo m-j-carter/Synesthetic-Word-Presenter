@@ -7,7 +7,7 @@
 
 # Notes/Changelog:
 #   - Still needs timer stuff
-#   - Needs results module added once made
+#   - Needs 
 
 
 import math
@@ -20,7 +20,7 @@ from uagame import Window
 from results import ResultsFile
 
 
-WORDS_FILENAME = 'words.txt'
+## TEST PARAMETERS ##
 WINDOW_SIZE = (700, 500)
 DEFAULT_FONT_COLOR = "gray"
 DEFAULT_FONT_SIZE = 36
