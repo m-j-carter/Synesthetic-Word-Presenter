@@ -1,5 +1,5 @@
 
-# Written By: Michael Carter, Oct. 2019
+# Written By: Michael Carter, Oct./Nov. 2019
 # For my PSYCO 403/505 research project
 
 import pygame

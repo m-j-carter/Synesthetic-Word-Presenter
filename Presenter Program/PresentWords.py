@@ -1,40 +1,47 @@
-# This file contains the classes PresentWords and Word, as used in the main timed word presenter program
+# This file contains the class PresentWords, as used in the main timed word presenter program.
 # Word is its own class (instead of a list of strings) to allow for easy modifications 
 
-# Written By: Michael Carter, Oct. 2019
+# Written By: Michael Carter, Oct./Nov. 2019
 # For my PSYCO 403/505 research project
 
 
 from numpy import random
 import pygame as pg
 from pygame.locals import *
+
 from uagame import Window
-from Word import *
-from DisplayTimer import *
-
-
+from word import *
+import time
+from results import ResultsFile
 
 
 WORDS_FILENAME = 'words.txt'
 
 WINDOW_SIZE = (700, 500)
 
-DEFAULT_FONT_COLOR = "white"
+DEFAULT_FONT_COLOR = "gray"
 DEFAULT_FONT_SIZE = 36
+DEFAULT_FONT_NAME = "Arial"
 BG_COLOR = "gray50"
 
 
 
 class PresentWords:
-    # This class includes everything required for the word presentation task.
-    # word_list is a list of objects of class Word
+    # This class includes everything required for a single word presentation task.
+    # word_list is a list of objects of class Word.
 
     @classmethod
     def set_word_lib(cls, word_lib):
-        cls.word_lib = word_lib
+        cls.word_lib = word_lib    
+    @classmethod
+    def set_window(cls, window_from_parent):
+        cls.window = window_from_parent
+    @classmethod
+    def set_results_file(cls, results_file):
+        cls.results = results_file
 
-
-    def __init__(self, num_words, present_time, delay_time):
+    def __init__(self, num_words, present_time, delay_time, is_colored=False):
+        self.__is_colored = is_colored
         self.__present_time = present_time
         self.__delay_time = delay_time
         self.__num_words = num_words
@@ -48,15 +55,13 @@ class PresentWords:
         self.__timer_bl = DisplayTimer()
 
         self.generate_rand_word_list()
+        self.__window = PresentWords.window
             
         self.run()
-
-
 
     def run(self):
         # runs the presenter for one word list
         self.__create_window()
-        
         self.__display_instructions()     
         self.__display_countdown()
         
@@ -66,23 +71,25 @@ class PresentWords:
                 self.__check_events()
                 next = self.__display_next(word)
                 self.__window.update()
+                self.__clock.tick(60)
                 
-
+        
+        return False       # end of the word presentation
+                
+                
     def __create_window(self):
         # Create a window for the game and open it.
-        self.__window = Window("Word Presenter", WINDOW_SIZE[0], WINDOW_SIZE[1])
+        #self.__window = Window("Word Presenter", WINDOW_SIZE[0], WINDOW_SIZE[1])
         self.__clock.tick(60)
         self.__window.set_bg_color(BG_COLOR)
         self.__window.set_font_color(DEFAULT_FONT_COLOR)
         self.__window.clear()
         self.__window.update()
   
-        
     def __check_events(self): 
         # handle user inputs
         for event in pg.event.get():
             if event.type == QUIT:
-                print("Quitting")
                 self.__handle_quit()
             
             if event.type == KEYUP:
@@ -90,19 +97,16 @@ class PresentWords:
                     self.__space_pressed = True
                 else: 
                     self.__space_pressed = False        # "flip the switch" back
-                    
 
     def __handle_quit(self):
         self.__quit = True
-        #self.__window.close()
         
+        #self.__window.close()
        
     def generate_rand_word_list(self):
         # Generates the word_list by randomly picking num_words from word_lib.
         for i in range(self.__num_words+1):
-            self.__word_list.append(random.choice(PresentWords.word_lib, replace=False))
-    
- 
+            self.__word_list.append(random.choice(PresentWords.word_lib, replace=False)) 
  
     def __display_next(self,word):
         # displays the next word for present_time, followed by a blank screen for delay_time 
@@ -116,13 +120,10 @@ class PresentWords:
                 return True
         return False
 
-
     def __display_blank(self):
-        print("Displaying Blank")
         self.__window.clear()
 
     def __display_word(self,word):
-        print("Displaying Word:",word)
         word.set_window(self.__window)
         word.draw_word()
         
@@ -148,16 +149,13 @@ class PresentWords:
             ["This is page 3 of the instructions display",      
             " ", "Press Space to Start"] ]
  
- 
- 
- 
         for page in instructions:
             self.__space_pressed = False
             while not self.__space_pressed:
                 
                 # print each line
                 for i, line in enumerate(page):
-                    x, y = self.__find_string_x_y(line, i)
+                    x, y = self.__find_string_x_y(line, i, len(instructions))
                     self.__window.draw_string(line, x, y)
                     
                 self.__check_events() 
@@ -174,59 +172,81 @@ class PresentWords:
             time.sleep(1)
             self.__window.clear()
 
-    def __find_string_x_y(self, print_string, line_no):
+
+    def __find_string_x_y(self, print_string, line_no, total_lines=1):
         # returns a tuple of the (x,y) position to draw the string at.
         x = (self.__window.get_width() - self.__window.get_string_width(print_string)) // 2
-        y = (self.__window.get_height() - self.__window.get_font_height()) // 2 + (self.__window.get_font_height() * line_no)
+        y = ((self.__window.get_height() - (self.__window.get_font_height() * total_lines+1))  // 2) + (self.__window.get_font_height() * line_no)
         
         return (x,y)
-
-
-class SaveData:
-    # represents the modules required to save the results to a .txt file.
-    # each trial should be saved as a separate file.
-    
-    def __init__(self, filename):
-        self.__filename = filename
-        
-        
-    def create_file(self):
-        pass
-        
-        
-        
-    def get_filename(self):
-        return self.__filename
     
 
+
+class DisplayTimer:
+    # This class allows the events to be timed, to make decisions as to whether or not to progress.
+
+    def __init__(self):
+        self.__time_init = time.time()      # current time in fractional seconds
+
+    def reset(self):
+        self.__time_init = time.time()
+
+    def been_longer_than(self, check_seconds):
+        time_now = time.time()
+        if self.__time_init < (time_now - check_seconds):
+            return True
+        else:
+            return False
+
+
+    
 
 def main():
     """Tests the Methods"""
     
+    window = create_window()
+    
     word_library = read_words_file(WORDS_FILENAME)
-        
-    PresentWords.set_word_lib(word_library)
-        
-    test_1 = PresentWords(4, 5, 2)      # num_words, present_time, delay_time
+    PresentWords.set_word_lib(word_library) 
+    PresentWords.set_window(window) 
+    
+    #results_file = ResultsFile()    
+    #PresentWords.set_results_file(results_file)
+       
+    
+    # Present Words
+    test_1 = PresentWords(4, 5, 2, False)      # (num_words, present_time, delay_time, is_colored (bool))
+    test_2 = PresentWords(5, 3, 1, True)    
+    
+    
+    
+def create_window():
+    # Create a window for the game and open it.
+    window = Window("Word Presenter", WINDOW_SIZE[0], WINDOW_SIZE[1])
+    window.set_bg_color(BG_COLOR)
+    window.set_font_color(DEFAULT_FONT_COLOR)
+    window.set_font_size(DEFAULT_FONT_SIZE)
+    window.set_font_name(DEFAULT_FONT_NAME)
+    window.clear()
+    window.update()
+    
+    return window   
     
     
 def read_words_file(filename):
     # Read in the list of possible words.
     # Returns a list of objects of the Word class.
     word_list = []
-
     try:		
         with open(filename,'r') as file:
             for input_word in file.readlines():
                 word_list.append(Word(input_word.strip('\n\r')))
         assert len(word_list) > 0, "word list cannot be empty"
-            
     except FileNotFoundError as e:
         print('Error: File not found! %s' % (e.strerror))
-        return 
-
+        return
     else:		
-        return word_list    
+        return word_list
     
 
 if __name__ == "__main__":
