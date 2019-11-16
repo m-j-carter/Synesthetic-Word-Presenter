@@ -53,12 +53,26 @@ class ResultsFile:
 			file.write("Colored: %s\n" % (colored))
 		file.close()
 
-	
-	def write_result(self, entry, start_time, end_time):
-		# writes one line of the participant's input to the file, along with their
-		# start and end time (corresponding to the first keypress until "enter" is pressed).
+	def new_results_header(self, time_limit):
+		# writes the relevant recall task info before the results.
 		with open(self.__filename, 'a') as file:
-			file.write(entry, start_time, end_time)
-			
+			file.write("Time Limit: %.1f minutes\n" % (time_limit))
+			file.write("------ Text --- Start -- End")
+			file.write("\n")
+		file.close()		
+		
+	def write_result(self, text, start_time, end_time):
+		# writes one line of the participant's input to the file, along with their
+		#   start and end time (corresponding to the first keypress until "enter" is pressed).
+		# If an entry is invalid (i.e. NoneType), it is replaced by its type.
+		with open(self.__filename, 'a') as file:		
+			try:
+				file.write("%11s\t" % (text))
+				file.write("%.3f\t" % (start_time))
+				file.write("%.3f\t" % (end_time))				
+			except TypeError:
+				file.write("None")	
+
+			file.write("\n")
 		file.close()
 	

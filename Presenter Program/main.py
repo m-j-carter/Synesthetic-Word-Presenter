@@ -1,9 +1,15 @@
-# This file includes everything to run an entire instance
+## This file includes everything to run an entire presentation and recall task
 
-# Written By: Michael Carter, Oct./Nov. 2019
-# For my PSYCO 403/505 research project
+## Written By: Michael Carter, Oct./Nov. 2019
+## For my PSYCO 403/505 research project
 
 
+## Notes/Changelog:
+##   - At some point I should merge all the duplicate methods between SerialRecall
+##       and PresentWords into a single utilities module.
+##   - Should also move the instructions out of the individual modules.
+
+from time import sleep
 import pygame as pg
 from pygame.locals import *
 
@@ -23,47 +29,56 @@ DEFAULT_FONT_NAME = "Arial"
 BG_COLOR = "gray50"
 
 
-
 def main():
-	
+	## INITIALIZE ##
 	window = create_window()
-
+	PresentWords.set_window(window) 
+	
 	word_library = read_words_file(WORDS_FILENAME)
 	PresentWords.set_word_lib(word_library) 
-	PresentWords.set_window(window) 
 
-	#results_file = ResultsFile()    
-	#PresentWords.set_results_file(results_file)
+	results_file = ResultsFile()    
+	PresentWords.set_results_file(results_file)
 
-	#SerialRecall.set_results_file(results_file)
+	SerialRecall.set_results_file(results_file)
 	SerialRecall.set_window(window)
 
 
-	# Present Words
-	test_1 = PresentWords(4, 5, 2, False)      # (num_words, present_time, delay_time, is_colored (bool))
-	# Distractor Task?
-
-	# Serial Recall Task
-
-
-	test_2 = PresentWords(5, 3, 1, True)    
-
-
+	## SET VARIABLES ##
+	num_words = 3
+	present_time = 2	# seconds
+	delay_time = 1		# seconds
+	is_colored = True
+	recall_timer = 0.5	# minutes
+	
+	
+	## PRESENT WORDS ##
+	reset_window_defaults(window)
+	PresentWords(num_words, present_time, delay_time, is_colored)      
+	
+	# Distractor Task would go here if used.
+	sleep(3)
+	
+	## SERIAL RECALL TASK ##
+	reset_window_defaults(window)
+	SerialRecall(num_words, recall_timer)		
 
 
 def create_window():
 	# Create a window for the game and open it.
 	window = Window("Word Presenter", WINDOW_SIZE[0], WINDOW_SIZE[1])
-	#clock.tick(60)
-	window.set_bg_color(BG_COLOR)
-	window.set_font_color(DEFAULT_FONT_COLOR)
-	window.set_font_size(DEFAULT_FONT_SIZE)
-	window.set_font_name(DEFAULT_FONT_NAME)
 	window.clear()
 	window.update()
 
 	return window   
 
+def reset_window_defaults(window):
+	# returns the window's colors, fonts, etc. to their defaults
+	window.set_bg_color(BG_COLOR)
+	window.set_font_color(DEFAULT_FONT_COLOR)
+	window.set_font_size(DEFAULT_FONT_SIZE)
+	window.set_font_name(DEFAULT_FONT_NAME)	
+	
 
 def read_words_file(filename):
 	# Read in the list of possible words.

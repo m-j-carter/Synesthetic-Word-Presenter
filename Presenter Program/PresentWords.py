@@ -1,8 +1,8 @@
-# This file contains the class PresentWords, as used in the main timed word presenter program.
-# Word is its own class (instead of a list of strings) to allow for easy modifications 
+## This file contains the class PresentWords, as used in the main timed word presenter program.
+## Word is its own class (instead of a list of strings) to allow for easy modifications 
 
-# Written By: Michael Carter, Oct./Nov. 2019
-# For my PSYCO 403/505 research project
+## Written By: Michael Carter, Oct./Nov. 2019
+## For my PSYCO 403/505 research project
 
 
 from numpy import random
@@ -10,7 +10,7 @@ import pygame as pg
 from pygame.locals import *
 
 from uagame import Window
-from word import *
+from word import Word
 import time
 from results import ResultsFile
 
@@ -25,9 +25,10 @@ BG_COLOR = "gray50"
 
 
 class PresentWords:
-    # This class includes everything required for a single word presentation task.
-    # word_list is a list of objects of class Word.
-
+    """
+    This class includes everything required for a single word presentation task.
+    word_list is a list of objects of class Word.
+    """
     @classmethod
     def set_word_lib(cls, word_lib):
         cls.word_lib = word_lib    
@@ -37,7 +38,6 @@ class PresentWords:
     @classmethod
     def set_results_file(cls, results_file):
         cls.results = results_file
-
 
     def __init__(self, num_words, present_time, delay_time, is_colored=False):
         self.__is_colored = is_colored
@@ -61,7 +61,7 @@ class PresentWords:
 
     def run(self):
         # runs the presenter for one word list
-        self.__create_window()
+        self.__initialize_window()
         self.__display_instructions()     
         self.__display_countdown()
         
@@ -74,16 +74,11 @@ class PresentWords:
                 self.__check_events()
                 next = self.__display_next(word)
                 self.__window.update()
-                self.__clock.tick(60)
-                
-        
-        return False       # end of the word presentation
-                
-                
-    def __create_window(self):
-        # Create a window for the game and open it.
-        #self.__window = Window("Word Presenter", WINDOW_SIZE[0], WINDOW_SIZE[1])
-        self.__clock.tick(60)
+                self.__clock.tick(30)
+
+    def __initialize_window(self):
+        # sets all the window's parameters to the ones relevant to the class.
+        self.__clock.tick(30)
         self.__window.set_bg_color(BG_COLOR)
         self.__window.set_font_color(DEFAULT_FONT_COLOR)
         self.__window.clear()
@@ -103,7 +98,7 @@ class PresentWords:
                 self.__handle_quit()
             
             if event.type == KEYUP:
-                if event.key == pygame.K_SPACE:
+                if event.key == pg.K_SPACE:
                     self.__space_pressed = True
                 else: 
                     self.__space_pressed = False        # "flip the switch" back
@@ -116,7 +111,7 @@ class PresentWords:
     def generate_rand_word_list(self):
         # Generates the word_list by randomly picking num_words from word_lib.
         try:
-            for i in range(self.__num_words+1):
+            for i in range(self.__num_words):
                 r = random.randint(0, len(PresentWords.word_lib))
                 self.__word_list.append(PresentWords.word_lib.pop(r))
                 #self.__word_list.append(random.choice(PresentWords.word_lib, replace=False)) 
@@ -147,35 +142,37 @@ class PresentWords:
         # Pages are advanced by a spacebar press.
         self.__window.set_font_color(DEFAULT_FONT_COLOR)
         self.__window.set_font_size(DEFAULT_FONT_SIZE)
-        print("Displaying Instructions")
+        print("Displaying Presentation Instructions")
         
         instructions = [ 
             # Page 1
             ["This is a test of word memory.", " ",         
-             "%d nouns will be presented for %d seconds at a time,"%(self.__num_words, self.__present_time), 
-             "with %d seconds in between."%(self.__delay_time),
+             "%d concrete nouns will be presented" % (self.__num_words), 
+             "for %d second(s) at a time," % (self.__present_time),
+             "with %d second(s) in between." % (self.__delay_time),
              " ", "Press Space to Continue"],
-        
             # Page 2
-            ["This is page 2 of the instructions display", 
+            ["Afterwards, you will be prompted",
+             "to recall the words in order.", 
              " ", "Press Space to Continue"],
-            
             # Page 3
-            ["This is page 3 of the instructions display",      
-            " ", "Press Space to Start"] ]
+            ["Press Space to Start"] ]
  
-        for page in instructions:
+        for i, page in enumerate(instructions):
             self.__space_pressed = False
             while not self.__space_pressed:
-                
-                # print each line
-                for i, line in enumerate(page):
-                    x, y = self.__find_string_x_y(line, i, len(instructions))
+                # draw the page counter
+                counter = "%d/%d" % (i+1, len(instructions))
+                self.__window.draw_string(counter, 
+                                          self.__window.get_width() - self.__window.get_string_width(counter),
+                                          self.__window.get_height() - self.__window.get_font_height())
+                # draw each line
+                for j, line in enumerate(page):
+                    x, y = self.__find_string_x_y(line, j, len(page))
                     self.__window.draw_string(line, x, y)
                     
                 self.__check_events() 
             self.__window.clear()                
-
 
     def __display_countdown(self):
         # currently just uses the time.sleep() method for the delay, 
@@ -187,19 +184,17 @@ class PresentWords:
             time.sleep(1)
             self.__window.clear()
 
-
     def __find_string_x_y(self, print_string, line_no, total_lines=1):
         # returns a tuple of the (x,y) position to draw the string at.
         x = (self.__window.get_width() - self.__window.get_string_width(print_string)) // 2
         y = ((self.__window.get_height() - (self.__window.get_font_height() * total_lines+1))  // 2) + (self.__window.get_font_height() * line_no)
-        
         return (x,y)
     
-
-
 class DisplayTimer:
-    # This class allows the events to be timed, to make decisions as to whether or not to progress.
-
+    """ 
+    This class allows the events to be timed,
+    to make decisions as to whether or not to progress.
+    """ 
     def __init__(self):
         self.__time_init = time.time()      # current time in fractional seconds
 
@@ -212,10 +207,7 @@ class DisplayTimer:
         if self.__time_init < (time_now - check_seconds):
             return True
         else:
-            return False
-
-
-    
+            return False 
 
 def main():
     """Tests the Methods"""
@@ -230,10 +222,8 @@ def main():
     PresentWords.set_results_file(results_file)
     
     # Present Words
-    test_1 = PresentWords(4, 5, 2, False)      # (num_words, present_time, delay_time, is_colored (bool))
+    #test_1 = PresentWords(4, 5, 2, False)      # (num_words, present_time, delay_time, is_colored (bool))
     test_2 = PresentWords(5, 3, 1, True)    
-    
-    
     
 def create_window():
     # Create a window for the game and open it.
