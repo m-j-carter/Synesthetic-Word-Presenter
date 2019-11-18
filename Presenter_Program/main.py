@@ -22,7 +22,7 @@ from results import ResultsFile
 
 ## INPUT PARAMETERS ##
 WORDS_FILENAME = 'words.txt'
-WINDOW_SIZE = (700, 500)
+WINDOW_SIZE = (800, 600)
 DEFAULT_FONT_COLOR = "gray"
 DEFAULT_FONT_SIZE = 36
 DEFAULT_FONT_NAME = "Arial"
@@ -45,11 +45,11 @@ def main():
 
 
 	## SET VARIABLES ##
-	num_words = 3
-	present_time = 2	# seconds
+	num_words = 10
+	present_time = 3	# seconds
 	delay_time = 1		# seconds
 	is_colored = True
-	recall_timer = 0.5	# minutes
+	recall_timer = 2	# minutes
 	
 	
 	## PRESENT WORDS ##
