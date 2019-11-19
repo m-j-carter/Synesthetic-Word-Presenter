@@ -7,7 +7,7 @@
 
 ## Notes/Changelog:
 ##   - Still kinda want a countdown timer displayed.
-##   - Still having issues with the text input. 
+##   - Still having minor issues with the text input. 
 ##       Works fine until you try to return to a previous input box, 
 ##       then it starts to fall apart.
 ##   - At some point I should merge all the duplicate methods between SerialRecall
@@ -24,16 +24,18 @@ import pygame_textinput
 from uagame import Window
 from results import ResultsFile
 
-
-## TEST PARAMETERS ##
-WINDOW_SIZE = (700, 500)
+## RECALL TASK PARAMETERS ##
 DEFAULT_FONT_COLOR = "gray"
 DEFAULT_FONT_SIZE = 36
 DEFAULT_FONT_NAME = "Arial"
 BG_COLOR = "gray50"
 LINE_SPACING = 5
 HEADER_SPACING = 25
-LINE_COLOR = (55,55,55)
+ROWS_TO_DISPLAY = 9
+
+## ONLY USED FOR TESTING ##
+WINDOW_SIZE = (700, 500)
+#LINE_COLOR = (55,55,55)
 
 
 class SerialRecall:
@@ -58,7 +60,7 @@ class SerialRecall:
 		self.__text_inputs_list = []
 		self.__row_index = 0
 		self.__first_row_index = 0
-		self.__last_row_index = 8
+		self.__last_row_index = ROWS_TO_DISPLAY
 		self.__current_input = None
 		self.__quit = False
 		self.__finished = False
@@ -85,7 +87,6 @@ class SerialRecall:
 			                        repeat_keys_initial_ms=300,
 			                        repeat_keys_interval_ms=50))
 		self.__current_input = self.__text_inputs_list[self.__row_index]
-
 	
 	def __run(self):
 		# handles one entire iteration of the SerialRecall class.
@@ -139,9 +140,6 @@ class SerialRecall:
 		self.__current_input = self.__text_inputs_list[self.__row_index]
 		self.__current_input.update(self.__events)        # feed textinput any events
 
-
-
-
 	def __draw_window(self):
 		# draw the window by drawing the header, then dynamically 
 		#   displaying the list of words so it can be scrolled through.
@@ -149,20 +147,24 @@ class SerialRecall:
 		self.__window.draw_string("Words remaining: %d"%(self.__count_remaining_words()), 10, 0)
 		
 		# draw the scroll arrows
+		up_arrow = "(scroll up)"
+		down_arrow = "(scroll down)"
+		self.__window.set_font_size(DEFAULT_FONT_SIZE//2)
 		if self.__first_row_index > 0:
-			self.__window.draw_string("^ ^ ^", 50, DEFAULT_FONT_SIZE)
+			self.__window.draw_string("%s" % (up_arrow), 50, DEFAULT_FONT_SIZE)
 		if self.__last_row_index < self.__num_words - 1:
-			y = (DEFAULT_FONT_SIZE + LINE_SPACING) * (self.__num_words + 1) + HEADER_SPACING
-			self.__window.draw_string("v v v", 50, y)
-			
+			y = (DEFAULT_FONT_SIZE + LINE_SPACING) * (self.__last_row_index - self.__first_row_index + 1) + HEADER_SPACING
+			self.__window.draw_string("%s" % (down_arrow), 50, y)	
+		self.__window.set_font_size(DEFAULT_FONT_SIZE)
+		
 		# draw the rows
-		for i in range(self.__first_row_index, self.__last_row_index):
-			if i < self.__num_words:
-				y = (DEFAULT_FONT_SIZE + LINE_SPACING) * (i+1) + HEADER_SPACING		
+		for pos_ind, word_ind in enumerate(range(self.__first_row_index, self.__last_row_index)):
+			if pos_ind < ROWS_TO_DISPLAY:
+				y = (DEFAULT_FONT_SIZE + LINE_SPACING) * (pos_ind+1) + HEADER_SPACING		
 				# draw the index number
-				self.__window.draw_string("%d:"%(i+1), 5, y)
+				self.__window.draw_string("%d:"%(word_ind+1), 5, y)
 				# draw the text
-				self.__draw_text_line(i, 50, y)	
+				self.__draw_text_line(word_ind, 50, y)	
 	
 	def __draw_text_line(self, i, x_pos, y_pos):		
 		# draw a single line of text.		
@@ -192,7 +194,6 @@ class SerialRecall:
 				else: 
 					self.__space_pressed = False        # "flip the switch" back				
 	
-	
 	def __handle_keypress(self, key):
 		# record the start time as the time of first keypress,
 		#   and the end time as the time at which return is pressed.
@@ -205,7 +206,6 @@ class SerialRecall:
 				self.__confirm_finished()	
 			else:
 				self.__handle_key_down()	# just treat it as a down arrow key
-
 
 	def __handle_quit(self):
 		self.__quit = True
@@ -241,8 +241,6 @@ class SerialRecall:
 				else:
 					return
 	
-
-	
 	def __find_string_x_y(self, print_string, line_no, total_lines=1):
 		# returns a tuple of the (x,y) position to draw the string at.
 		x = (self.__window.get_width() - self.__window.get_string_width(print_string)) // 2
@@ -252,16 +250,24 @@ class SerialRecall:
 	
 		
 	def __handle_key_up(self):
-		# TODO
-		# pause timer and restart previous timer?
-		self.__row_index -= 1 if self.__row_index > 0 else 0	
+		# return up a row, and scroll the screen up if needed.
+		if self.__row_index != 0:
+			self.__row_index -= 1
+			if self.__row_index < self.__first_row_index:
+				self.__last_row_index -= 1			
+				self.__first_row_index -= 1
+			
 		self.__update_current_input()
 
 	def __handle_key_down(self):
-		# advance to the next row or end input
-		if self.__row_index < self.__num_words - 1:
+		# advance to the next row, and scroll the screen down if needed.
+		if self.__row_index != self.__num_words - 1:
 			self.__row_index += 1
-			self.__update_current_input()
+		if self.__row_index >= self.__last_row_index:
+			self.__last_row_index += 1
+			self.__first_row_index += 1
+			
+		self.__update_current_input()
 	
 	def __count_remaining_words(self):
 		# returns an integer of the number of words for which the value is null
@@ -334,7 +340,7 @@ class SerialRecall:
 		print("Displaying Time's Up")
 	
 		page = [ "Time's Up!",
-		         "Press any key to exit" ]
+		         "Press Enter to exit" ]
 	
 		while True:
 			self.__events = pg.event.get()			
@@ -342,7 +348,8 @@ class SerialRecall:
 				if event.type == QUIT:
 					self.__handle_quit()
 				if event.type == KEYUP:
-					return
+					if event.key == K_RETURN:
+						return					
 			
 			# draw each line
 			for j, line in enumerate(page):
@@ -353,9 +360,6 @@ class SerialRecall:
 			self.__window.clear()     	
 		
 		
-		
-		
-
 def main():
 	"""Tests the Methods"""
 
@@ -365,7 +369,7 @@ def main():
 	test_results = ResultsFile()
 	SerialRecall.set_results_file(test_results)
 
-	SerialRecall(5, 0.5)
+	SerialRecall(15, 0.5)
 
 def create_window():
 	# Create a window for the game and open it.
