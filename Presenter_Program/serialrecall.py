@@ -31,10 +31,10 @@ DEFAULT_FONT_NAME = "Arial"
 BG_COLOR = "gray50"
 LINE_SPACING = 5
 HEADER_SPACING = 25
-ROWS_TO_DISPLAY = 9
+ROWS_TO_DISPLAY = 12
 
 ## ONLY USED FOR TESTING ##
-WINDOW_SIZE = (700, 500)
+WINDOW_SIZE = (800, 600)
 #LINE_COLOR = (55,55,55)
 
 
@@ -60,7 +60,7 @@ class SerialRecall:
 		self.__text_inputs_list = []
 		self.__row_index = 0
 		self.__first_row_index = 0
-		self.__last_row_index = ROWS_TO_DISPLAY
+		self.__last_row_index = ROWS_TO_DISPLAY if ROWS_TO_DISPLAY < num_words else num_words
 		self.__current_input = None
 		self.__quit = False
 		self.__finished = False
@@ -152,7 +152,7 @@ class SerialRecall:
 		self.__window.set_font_size(DEFAULT_FONT_SIZE//2)
 		if self.__first_row_index > 0:
 			self.__window.draw_string("%s" % (up_arrow), 50, DEFAULT_FONT_SIZE)
-		if self.__last_row_index < self.__num_words - 1:
+		if self.__last_row_index < self.__num_words:
 			y = (DEFAULT_FONT_SIZE + LINE_SPACING) * (self.__last_row_index - self.__first_row_index + 1) + HEADER_SPACING
 			self.__window.draw_string("%s" % (down_arrow), 50, y)	
 		self.__window.set_font_size(DEFAULT_FONT_SIZE)

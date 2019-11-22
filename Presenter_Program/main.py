@@ -10,6 +10,7 @@
 ##   - Should also move the instructions out of the individual modules.
 
 from time import sleep
+import random
 import pygame as pg
 from pygame.locals import *
 
@@ -20,9 +21,10 @@ from presentwords import PresentWords
 from results import ResultsFile
 
 
-## INPUT PARAMETERS ##
+## PARAMETERS ##
 WORDS_FILENAME = 'words.txt'
 WINDOW_SIZE = (800, 600)
+
 DEFAULT_FONT_COLOR = "gray"
 DEFAULT_FONT_SIZE = 36
 DEFAULT_FONT_NAME = "Arial"
@@ -30,38 +32,48 @@ BG_COLOR = "gray50"
 
 
 def main():
-	## INITIALIZE ##
-	window = create_window()
-	PresentWords.set_window(window) 
+	## SET VARIABLES ##
+	num_words = 15
+	present_time = 4	# seconds
+	delay_time = 1		# seconds
+	recall_timer = 2	# minutes
 	
-	word_library = read_words_file(WORDS_FILENAME)
+	# flip a coin to choose the order
+	presentation_order = [False,False]
+	coin = random.random()  
+	if coin < .5:
+		presentation_order[0] = True
+	else:
+		presentation_order[1] = True	
+		
+	## INITIALIZED SHARED ATTRIBUTES ##
+	word_library = read_words_file(WORDS_FILENAME)		
+	results_file = ResultsFile()  
+	
 	PresentWords.set_word_lib(word_library) 
-
-	results_file = ResultsFile()    
 	PresentWords.set_results_file(results_file)
 
 	SerialRecall.set_results_file(results_file)
-	SerialRecall.set_window(window)
-
-
-	## SET VARIABLES ##
-	num_words = 10
-	present_time = 3	# seconds
-	delay_time = 1		# seconds
-	is_colored = True
-	recall_timer = 2	# minutes
 	
 	
-	## PRESENT WORDS ##
-	reset_window_defaults(window)
-	PresentWords(num_words, present_time, delay_time, is_colored)      
-	
-	# Distractor Task would go here if used.
-	sleep(3)
-	
-	## SERIAL RECALL TASK ##
-	reset_window_defaults(window)
-	SerialRecall(num_words, recall_timer)		
+	for is_colored in presentation_order:
+		## INITIALIZE WINDOW ##
+		window = create_window()			
+		PresentWords.set_window(window) 
+		SerialRecall.set_window(window)			
+		## PRESENT WORDS ##
+		reset_window_defaults(window)
+		p_words = PresentWords(num_words, present_time, delay_time, is_colored)      
+		
+		# Distractor Task would go here if used.
+		sleep(3)
+		
+		## SERIAL RECALL TASK ##
+		reset_window_defaults(window)
+		r_words = SerialRecall(num_words, recall_timer)	
+		
+		window.close()
+		sleep(1)
 
 
 def create_window():
